@@ -77,6 +77,7 @@ export interface Transcript {
   speakers: Speaker[];
   status: 'processing' | 'completed';
   channelId?: string; // Linked to a channel
+  syncStatus?: 'synced' | 'pending' | 'failed';
 }
 
 export interface APIKey {
@@ -171,6 +172,7 @@ export interface AdvancedSettings {
 export interface AppSettings {
   dataSaver: boolean;
   language: string;
+  themeColor: 'blue' | 'teal' | 'purple' | 'orange' | 'pink';
   vocabulary: string[];
   userContext: string; // For "Context" page
   notifications: NotificationSettings;

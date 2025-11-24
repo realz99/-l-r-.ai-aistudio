@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { ChevronRight, ArrowLeft, Key, Plus, Trash2, PieChart } from 'lucide-react';
+import { ChevronRight, ArrowLeft, Key, Plus, Trash2, PieChart, Palette } from 'lucide-react';
 import { simulateGoogleLogin } from '../services/googleIntegration';
 import { SettingItemProps, AppSettings, NotificationSettings, MeetingSettings, AdvancedSettings, APIKey } from '../types';
 import { SettingsStore } from '../services/settingsStore';
@@ -24,7 +24,7 @@ const SettingItem: React.FC<SettingItemProps> = ({ label, value, onClick, hasChe
       {toggle && (
         <div 
             onClick={(e) => { e.stopPropagation(); onToggle && onToggle(); }}
-            className={`w-[51px] h-[31px] rounded-full p-0.5 transition-colors duration-200 ease-in-out cursor-pointer ${checked ? 'bg-green-500' : 'bg-gray-200 dark:bg-gray-600'}`}
+            className={`w-[51px] h-[31px] rounded-full p-0.5 transition-colors duration-200 ease-in-out cursor-pointer ${checked ? 'bg-otter-500' : 'bg-gray-200 dark:bg-gray-600'}`}
         >
             <div className={`bg-white w-[27px] h-[27px] rounded-full shadow-sm transform transition-transform duration-200 ease-in-out ${checked ? 'translate-x-5' : 'translate-x-0'}`} />
         </div>
@@ -302,6 +302,7 @@ const StorageSettingsScreen: React.FC<{ onBack: () => void }> = ({ onBack }) => 
 
 const Settings: React.FC<{ onNavigate: (page: string) => void }> = ({ onNavigate }) => {
   const [dataSaver, setDataSaver] = useState(SettingsStore.getSettings().dataSaver);
+  const [currentTheme, setCurrentTheme] = useState(SettingsStore.getSettings().themeColor);
   const [googleConnected, setGoogleConnected] = useState(false);
   const [driveConnected, setDriveConnected] = useState(false);
   
@@ -330,6 +331,11 @@ const Settings: React.FC<{ onNavigate: (page: string) => void }> = ({ onNavigate
       SettingsStore.updateSettings({ dataSaver: newVal });
   };
 
+  const changeTheme = (color: 'blue' | 'teal' | 'purple' | 'orange' | 'pink') => {
+      setCurrentTheme(color);
+      SettingsStore.updateSettings({ themeColor: color });
+  };
+
   if (currentView === 'notifications') return <NotificationSettingsScreen onBack={() => setCurrentView('main')} />;
   if (currentView === 'meeting') return <MeetingSettingsScreen onBack={() => setCurrentView('main')} />;
   if (currentView === 'advanced') return <AdvancedSettingsScreen onBack={() => setCurrentView('main')} />;
@@ -353,6 +359,22 @@ const Settings: React.FC<{ onNavigate: (page: string) => void }> = ({ onNavigate
                 checked={dataSaver} 
                 onToggle={toggleDataSaver} 
             />
+            
+            {/* Theme Selector */}
+            <div className="px-4 py-3.5 bg-white dark:bg-ios-surface-dark flex justify-between items-center border-b border-gray-100 dark:border-ios-separator-dark/50 cursor-default">
+                <span className="text-[17px] text-gray-900 dark:text-white">Appearance</span>
+                <div className="flex gap-2">
+                    {['blue', 'teal', 'purple', 'orange', 'pink'].map((c) => (
+                        <button 
+                            key={c}
+                            onClick={() => changeTheme(c as any)}
+                            className={`w-6 h-6 rounded-full border-2 transition-all ${currentTheme === c ? 'border-gray-400 scale-110' : 'border-transparent'}`}
+                            style={{ backgroundColor: c === 'blue' ? '#2D72D2' : c === 'teal' ? '#009688' : c === 'purple' ? '#8b5cf6' : c === 'orange' ? '#f97316' : '#ec4899' }}
+                        />
+                    ))}
+                </div>
+            </div>
+
             <SettingItem label="Notifications" onClick={() => setCurrentView('notifications')} />
             <SettingItem label="Manage Storage" onClick={() => setCurrentView('storage')} />
             <SettingItem label="Gemini API Keys" onClick={() => setCurrentView('apikeys')} value="Setup" />

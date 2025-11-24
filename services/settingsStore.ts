@@ -4,6 +4,7 @@ import { AppSettings } from "../types";
 const DEFAULT_SETTINGS: AppSettings = {
   dataSaver: false,
   language: 'English',
+  themeColor: 'blue',
   vocabulary: [],
   userContext: '',
   notifications: {

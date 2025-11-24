@@ -38,6 +38,7 @@ const DEFAULT_SETTINGS: AppSettings = {
     removeBranding: false,
     showSpeakerTime: false,
     preventAutoLock: true,
+    showBottomNav: true,
   }
 };
 

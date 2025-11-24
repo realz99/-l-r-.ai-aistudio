@@ -10,6 +10,7 @@ import Context from './pages/Context';
 import TaskDetail from './pages/TaskDetail';
 import Planner from './pages/Planner';
 import LiveSession from './components/LiveSession';
+import GeometricBackground from './components/GeometricBackground';
 import { MOCK_TRANSCRIPTS, addChannel, addFolder, getChannels, getFolders } from './services/mockData';
 import { transcribeAudio, extractSmartEntities, cleanupTranscript } from './services/geminiService';
 import { triggerGoogleLogin, fetchSettingsFromCloud, syncTranscriptToDrive, initGoogleAuth } from './services/googleIntegration';
@@ -17,69 +18,19 @@ import { Transcript, Speaker, SmartEntity, NeuroTask, Account } from './types';
 import { SettingsStore } from './services/settingsStore';
 import { ChevronDown, Radio, Pause, X, WifiOff, RefreshCw, Loader2 } from 'lucide-react';
 
-// --- LOGIN SCREEN ---
-const LoginScreen: React.FC<{ onLogin: (account: Account) => void }> = ({ onLogin }) => {
-  const [loading, setLoading] = useState(false);
-
-  const handleGoogleLogin = async () => {
-      setLoading(true);
-      try {
-          const profile = await triggerGoogleLogin();
-          const cloudSettings = await fetchSettingsFromCloud();
-          if (cloudSettings) {
-              SettingsStore.replaceSettings(cloudSettings);
-          }
-          const newAccount: Account = {
-              id: profile.email, // unique ID
-              name: profile.name,
-              email: profile.email,
-              avatar: profile.avatar,
-              token: profile.accessToken
-          };
-          onLogin(newAccount);
-      } catch (e) {
-          console.error("Login failed:", e);
-          alert("Login failed. Please try again.");
-      } finally {
-          setLoading(false);
-      }
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 bg-black text-white flex flex-col items-center justify-center p-8">
-      <div className="w-32 h-32 flex items-center justify-center mb-8 animate-in zoom-in duration-500">
-        {/* Silhouette Logo */}
-        <svg viewBox="0 0 512 512" className="w-full h-full">
-            <path d="M180 140 V 120 A 80 80 0 0 0 100 40 H 80 A 80 80 0 0 0 0 120 V 240 A 160 160 0 0 0 160 400 H 180 A 80 80 0 0 0 260 320 V 300" fill="none" stroke="white" strokeWidth="20" strokeLinecap="round" transform="translate(60, 60)" />
-            <path d="M340 160 C 380 160 420 200 420 256 C 420 312 380 352 340 352" stroke="#2D72D2" strokeWidth="30" strokeLinecap="round" fill="none" className="animate-pulse" />
-            <path d="M400 100 C 460 100 512 170 512 256 C 512 342 460 412 400 412" stroke="#2D72D2" strokeWidth="20" strokeLinecap="round" fill="none" opacity="0.6" />
-        </svg>
-      </div>
-      <h1 className="text-5xl font-black text-center leading-tight mb-3 tracking-tighter">ọlọ́rọ̀.ai</h1>
-      <p className="text-center text-gray-400 text-lg mb-12 max-w-xs leading-relaxed">Your Offline-First AI Second Brain.</p>
-      <button 
-        onClick={handleGoogleLogin}
-        disabled={loading}
-        className="w-full max-w-xs flex items-center justify-center gap-3 px-6 py-4 bg-white text-gray-900 font-bold rounded-full shadow-xl active:scale-95 transition-transform hover:bg-gray-100 focus:ring-4 focus:ring-otter-500"
-      >
-        {loading ? <Loader2 className="animate-spin" /> : (
-            <>
-                <img src="https://www.svgrepo.com/show/475656/google-color.svg" className="w-6 h-6" alt="" />
-                <span>Sign in with Google</span>
-            </>
-        )}
-      </button>
-    </div>
-  );
-};
-
 // --- MAIN APP ---
 
 const App: React.FC = () => {
-  // Auth & Accounts
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [accounts, setAccounts] = useState<Account[]>([]);
-  const [currentAccount, setCurrentAccount] = useState<Account | null>(null);
+  // Auth & Accounts - HARDCODED FOR LOCAL BYPASS
+  const [isAuthenticated, setIsAuthenticated] = useState(true);
+  const [accounts, setAccounts] = useState<Account[]>([{
+      id: 'guest',
+      name: 'Guest User',
+      email: 'offline@local',
+      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Guest',
+      token: ''
+  }]);
+  const [currentAccount, setCurrentAccount] = useState<Account | null>(accounts[0]);
 
   // Navigation & State
   const [currentPage, setCurrentPage] = useState('dashboard');
@@ -115,80 +66,56 @@ const App: React.FC = () => {
   const silenceTimeoutRef = useRef<any>(null);
 
   useEffect(() => {
-      initGoogleAuth((token) => {
-          console.log("Google Auth Initialized");
-      });
-  }, []);
-
-  useEffect(() => {
       // Theme Injection
       const themes = {
           blue: { 500: '#2D72D2' },
           teal: { 500: '#009688' },
           purple: { 500: '#8b5cf6' },
           orange: { 500: '#f97316' },
-          pink: { 500: '#ec4899' }
+          pink: { 500: '#ec4899' },
+          red: { 500: '#ef4444' },
+          green: { 500: '#22c55e' },
+          indigo: { 500: '#6366f1' },
+          cyan: { 500: '#06b6d4' },
+          rose: { 500: '#f43f5e' }
       };
       const selected = themes[themeColor] || themes.blue;
       document.documentElement.style.setProperty('--primary-500', selected[500]);
   }, [themeColor]);
 
+  // Listen for settings changes from other components
   useEffect(() => {
-    // Restore auth
-    const storedAccounts = localStorage.getItem('oloro_accounts');
-    const storedCurrentId = localStorage.getItem('oloro_current_account_id');
-    
-    if (storedAccounts) {
-        const parsed = JSON.parse(storedAccounts);
-        setAccounts(parsed);
-        if (storedCurrentId) {
-            const current = parsed.find((a: Account) => a.id === storedCurrentId);
-            if (current) {
-                setCurrentAccount(current);
-                setIsAuthenticated(true);
-            }
-        }
+      const interval = setInterval(() => {
+          const current = SettingsStore.getSettings().themeColor;
+          if (current !== themeColor) {
+              setThemeColor(current);
+          }
+      }, 1000);
+      return () => clearInterval(interval);
+  }, [themeColor]);
+
+  useEffect(() => {
+    // Restore saved transcripts
+    const local = localStorage.getItem('local_transcripts');
+    if (local) {
+        try {
+            setTranscripts(JSON.parse(local));
+        } catch(e) { console.error(e); }
+    } else {
+        setTranscripts(MOCK_TRANSCRIPTS);
     }
     
     setDarkMode(true);
     document.documentElement.classList.add('dark');
   }, []);
 
-  const handleLogin = (account: Account) => {
-      setIsAuthenticated(true);
-      setAccounts(prev => {
-          const exists = prev.find(a => a.id === account.id);
-          const updated = exists ? prev.map(a => a.id === account.id ? account : a) : [...prev, account];
-          localStorage.setItem('oloro_accounts', JSON.stringify(updated));
-          return updated;
-      });
-      setCurrentAccount(account);
-      localStorage.setItem('oloro_current_account_id', account.id);
-  };
-
   const switchAccount = (id: string) => {
-      const target = accounts.find(a => a.id === id);
-      if (target) {
-          setCurrentAccount(target);
-          localStorage.setItem('oloro_current_account_id', target.id);
-          window.location.reload(); // Simpler to reload state for new user context
-      }
+      // Placeholder for future multi-account switch
+      alert("Account switching disabled in local mode.");
   };
 
   const addNewAccount = async () => {
-      try {
-          const profile = await triggerGoogleLogin();
-          const newAccount: Account = {
-              id: profile.email,
-              name: profile.name,
-              email: profile.email,
-              avatar: profile.avatar,
-              token: profile.accessToken
-          };
-          handleLogin(newAccount);
-      } catch (e) {
-          console.error("Add account failed", e);
-      }
+      alert("Adding accounts disabled in local mode.");
   };
 
   const handleCreate = () => {
@@ -206,10 +133,6 @@ const App: React.FC = () => {
       setNewItemName('');
   };
 
-  // ... (Keeping existing transcription/recording logic from previous App.tsx for brevity)
-  // Assume startRecording, stopRecording, processSyncQueue are here as previously implemented.
-  // Re-implementing them briefly to ensure code validity in this block.
-  
   const startRecording = async () => {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -266,26 +189,30 @@ const App: React.FC = () => {
           mediaRecorderRef.current!.onstop = async () => {
               setIsRecording(false);
               setIsLiveMode(false);
-              const blob = new Blob(audioChunksRef.current, {type: 'audio/webm'});
               setIsProcessing(true);
-              // Mock processing for brevity in this update, reusing robust logic from previous turn implicitly
+              
+              // Simulated processing delay
               setTimeout(() => {
                   setIsProcessing(false);
                   const newTranscript: Transcript = {
                       id: Date.now().toString(),
-                      title: 'New Recording',
+                      title: `New Recording ${new Date().toLocaleTimeString()}`,
                       date: new Date().toISOString(),
                       duration: recordingTime,
                       status: 'completed',
                       syncStatus: 'pending',
                       speakers: [],
-                      segments: liveSegments.map((s,i) => ({id: i.toString(), speakerId: 's1', text: s.text, startTime: 0, endTime: 0})),
+                      segments: liveSegments.map((s,i) => ({id: i.toString(), speakerId: 's1', text: s.text || "Audio recorded.", startTime: 0, endTime: 0})),
                       summary: null,
                       actionItems: []
                   };
-                  setTranscripts(p => [newTranscript, ...p]);
+                  setTranscripts(p => {
+                      const updated = [newTranscript, ...p];
+                      localStorage.setItem('local_transcripts', JSON.stringify(updated));
+                      return updated;
+                  });
                   resolve();
-              }, 2000);
+              }, 1500);
           };
           mediaRecorderRef.current!.stop();
       });
@@ -302,8 +229,6 @@ const App: React.FC = () => {
         setIsSidebarOpen(false);
     }
   };
-
-  if (!isAuthenticated) return <LoginScreen onLogin={handleLogin} />;
 
   const renderContent = () => {
     if (selectedTask) return <TaskDetail task={selectedTask} onBack={() => setSelectedTask(null)} />;
@@ -322,7 +247,7 @@ const App: React.FC = () => {
             channelId={currentChannelId} 
             onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} 
             onRecord={startRecording}
-            onOpenModal={setActiveModal} // Passing the modal opener
+            onOpenModal={setActiveModal} 
         />;
       case 'planner': return <Planner onNavigate={handleNavigate} onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} />;
       case 'settings': return <Settings onNavigate={handleNavigate} />;
@@ -334,7 +259,13 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className={`flex h-screen bg-[#000000] text-white font-sans overflow-hidden`}>
+    <div className={`flex h-screen bg-[#000000] text-white font-sans overflow-hidden relative`}>
+      {/* GLOBAL BACKGROUND - Z-0 */}
+      <div className="fixed inset-0 z-0 pointer-events-none">
+          <GeometricBackground />
+      </div>
+
+      {/* SIDEBAR - Z-50 (Mobile) / Normal flow (Desktop) */}
       <Navigation 
         currentPage={currentPage} 
         onNavigate={handleNavigate} 
@@ -350,7 +281,8 @@ const App: React.FC = () => {
         onAddAccount={addNewAccount}
       />
       
-      <main className={`flex-1 h-screen overflow-hidden relative pb-[80px] md:pb-0 transition-transform duration-300 ease-out ${isSidebarOpen ? 'translate-x-[260px] md:translate-x-0' : ''}`}>
+      {/* MAIN CONTENT - Z-10 (Above background) */}
+      <main className={`flex-1 h-screen overflow-hidden relative z-10 pb-[80px] md:pb-0 transition-transform duration-300 ease-out bg-[#000000]/80 backdrop-blur-sm ${isSidebarOpen ? 'translate-x-[260px] md:translate-x-0' : ''}`}>
           {renderContent()}
           
           {/* Status Toasts */}
@@ -366,7 +298,7 @@ const App: React.FC = () => {
       
       {isLiveMode && <LiveSession onClose={() => setIsLiveMode(false)} />}
       
-      {/* GLOBAL CREATE MODAL */}
+      {/* GLOBAL CREATE MODAL - Z-120 */}
       {activeModal && (
           <div className="fixed inset-0 z-[120] bg-black/90 backdrop-blur-md flex items-center justify-center p-4" role="dialog">
               <div className="bg-[#1C1C1E] p-6 rounded-2xl w-full max-w-sm border border-white/10 shadow-2xl animate-in zoom-in-95">
@@ -385,22 +317,22 @@ const App: React.FC = () => {
           </div>
       )}
       
-      {/* RECORDING OVERLAY (Simplified for update) */}
+      {/* RECORDING OVERLAY - Z-100 */}
       {isRecording && !isLiveMode && (
-          <div className="fixed inset-0 z-[100] bg-[#000000] text-white flex flex-col">
+          <div className="fixed inset-0 z-[100] bg-[#000000]/95 backdrop-blur-lg text-white flex flex-col">
               <div className="flex justify-between items-center p-4 pt-safe">
-                  <button onClick={() => setIsRecording(false)} className="p-2 opacity-70"><ChevronDown size={28} /></button>
+                  <button onClick={() => setIsRecording(false)} className="p-2 opacity-70 hover:opacity-100"><ChevronDown size={28} /></button>
                   <span className="text-xl font-mono">{Math.floor(recordingTime / 60)}:{Math.floor(recordingTime % 60).toString().padStart(2, '0')}</span>
                   <div />
               </div>
               <div className="flex-1 flex flex-col justify-center p-6">
                   <div className="h-32 flex items-center justify-center gap-1">
-                      {[...Array(10)].map((_, i) => <div key={i} className="w-3 bg-otter-500 rounded-full" style={{height: `${audioLevel * 2}%`}}></div>)}
+                      {[...Array(10)].map((_, i) => <div key={i} className="w-3 bg-otter-500 rounded-full" style={{height: `${audioLevel * 2}%`, transition: 'height 0.1s'}}></div>)}
                   </div>
-                  <p className="text-center text-xl mt-8">{liveSegments[liveSegments.length-1]?.text || "Listening..."}</p>
+                  <p className="text-center text-xl mt-8 font-medium text-gray-200">{liveSegments[liveSegments.length-1]?.text || "Listening..."}</p>
               </div>
               <div className="p-8 flex justify-center">
-                  <button onClick={stopRecording} className="w-20 h-20 bg-red-500 rounded-full flex items-center justify-center"><div className="w-8 h-8 bg-white rounded"></div></button>
+                  <button onClick={stopRecording} className="w-20 h-20 bg-red-500 rounded-full flex items-center justify-center shadow-neon active:scale-95 transition-transform"><div className="w-8 h-8 bg-white rounded"></div></button>
               </div>
           </div>
       )}

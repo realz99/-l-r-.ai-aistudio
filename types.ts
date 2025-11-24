@@ -123,6 +123,7 @@ export interface ChatMessage {
   role: 'user' | 'model';
   text: string;
   timestamp: number;
+  attachment?: string; // base64 image attachment
 }
 
 export interface CalendarEvent {
@@ -177,12 +178,13 @@ export interface AdvancedSettings {
   removeBranding: boolean;
   showSpeakerTime: boolean;
   preventAutoLock: boolean;
+  showBottomNav: boolean;
 }
 
 export interface AppSettings {
   dataSaver: boolean;
   language: string;
-  themeColor: 'blue' | 'teal' | 'purple' | 'orange' | 'pink';
+  themeColor: 'blue' | 'teal' | 'purple' | 'orange' | 'pink' | 'red' | 'green' | 'indigo' | 'cyan' | 'rose';
   vocabulary: string[];
   userContext: string; // For "Context" page
   geminiModel: string;

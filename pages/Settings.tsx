@@ -330,10 +330,23 @@ const Settings: React.FC<{ onNavigate: (page: string) => void }> = ({ onNavigate
       SettingsStore.updateSettings({ dataSaver: newVal });
   };
 
-  const changeTheme = (color: 'blue' | 'teal' | 'purple' | 'orange' | 'pink') => {
-      setCurrentTheme(color);
-      SettingsStore.updateSettings({ themeColor: color });
+  const changeTheme = (color: 'blue' | 'teal' | 'purple' | 'orange' | 'pink' | 'red' | 'green' | 'indigo' | 'cyan' | 'rose') => {
+      setCurrentTheme(color as any);
+      SettingsStore.updateSettings({ themeColor: color as any });
   };
+
+  const colors = [
+      { id: 'blue', hex: '#2D72D2' },
+      { id: 'teal', hex: '#009688' },
+      { id: 'purple', hex: '#8b5cf6' },
+      { id: 'orange', hex: '#f97316' },
+      { id: 'pink', hex: '#ec4899' },
+      { id: 'red', hex: '#ef4444' },
+      { id: 'green', hex: '#22c55e' },
+      { id: 'indigo', hex: '#6366f1' },
+      { id: 'cyan', hex: '#06b6d4' },
+      { id: 'rose', hex: '#f43f5e' },
+  ];
 
   if (currentView === 'notifications') return <NotificationSettingsScreen onBack={() => setCurrentView('main')} />;
   if (currentView === 'meeting') return <MeetingSettingsScreen onBack={() => setCurrentView('main')} />;
@@ -360,15 +373,16 @@ const Settings: React.FC<{ onNavigate: (page: string) => void }> = ({ onNavigate
             />
             
             {/* Theme Selector */}
-            <div className="px-4 py-3.5 bg-white dark:bg-ios-surface-dark flex justify-between items-center border-b border-gray-100 dark:border-ios-separator-dark/50 cursor-default">
+            <div className="px-4 py-4 bg-white dark:bg-ios-surface-dark flex flex-col gap-3 border-b border-gray-100 dark:border-ios-separator-dark/50 cursor-default">
                 <span className="text-[17px] text-gray-900 dark:text-white">Appearance</span>
-                <div className="flex gap-2">
-                    {['blue', 'teal', 'purple', 'orange', 'pink'].map((c) => (
+                <div className="flex gap-3 overflow-x-auto no-scrollbar py-1 px-1">
+                    {colors.map((c) => (
                         <button 
-                            key={c}
-                            onClick={() => changeTheme(c as any)}
-                            className={`w-6 h-6 rounded-full border-2 transition-all ${currentTheme === c ? 'border-gray-400 scale-110' : 'border-transparent'}`}
-                            style={{ backgroundColor: c === 'blue' ? '#2D72D2' : c === 'teal' ? '#009688' : c === 'purple' ? '#8b5cf6' : c === 'orange' ? '#f97316' : '#ec4899' }}
+                            key={c.id}
+                            onClick={() => changeTheme(c.id as any)}
+                            className={`w-7 h-7 rounded-full border-2 transition-all flex-shrink-0 ${currentTheme === c.id ? 'border-gray-400 scale-110 shadow-md' : 'border-transparent opacity-80 hover:opacity-100'}`}
+                            style={{ backgroundColor: c.hex }}
+                            aria-label={`Select ${c.id} theme`}
                         />
                     ))}
                 </div>

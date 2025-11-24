@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Play, Pause, RotateCcw, RotateCw, Mic, Image, MessageSquare, PenTool } from 'lucide-react';
 

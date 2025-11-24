@@ -1,8 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
-import { Search, Plus, Bell, Calendar as CalendarIcon, ExternalLink, ChevronDown, Video, WifiOff, MapPin, Clock, Hash, Users, Menu, X, Mic, CloudUpload, FolderPlus, MessageSquare, CheckSquare, ChevronLeft, ChevronRight, List, Grid } from 'lucide-react';
+import { Search, Plus, Bell, Calendar as CalendarIcon, ExternalLink, ChevronDown, Video, WifiOff, MapPin, Clock, Hash, Users, Menu, X, Mic, CloudUpload, FolderPlus, MessageSquare, CheckSquare } from 'lucide-react';
 import { Transcript, CalendarEvent } from '../types';
-import { triggerGoogleLogin, getCalendarEvents } from '../services/googleIntegration';
+import { simulateGoogleLogin, getMockCalendarEvents } from '../services/googleIntegration';
 import { getChannels } from '../services/mockData';
 import NotificationCenter, { MOCK_NOTIFICATIONS } from '../components/NotificationCenter';
 
@@ -33,66 +33,18 @@ const Dashboard: React.FC<DashboardProps> = ({ transcripts, onSelectTranscript, 
   const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   
-  // Calendar Grid State
-  const [currentMonth, setCurrentMonth] = useState(new Date());
-  const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
-  const [calendarViewMode, setCalendarViewMode] = useState<'grid' | 'list'>('grid');
-
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [showAddMenu, setShowAddMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showAddMenu, setShowAddMenu] = useState(false);
   const [notifications, setNotifications] = useState(MOCK_NOTIFICATIONS);
-  const [isCalendarLoading, setIsCalendarLoading] = useState(false);
 
   useEffect(() => { setActiveTab(view); }, [view]);
-  
   useEffect(() => {
-    const loadEvents = async () => {
-        if (localStorage.getItem('google_calendar_connected') === 'true') {
-            setIsCalendarLoading(true);
-            const events = await getCalendarEvents();
-            setCalendarEvents(events);
-            setIsCalendarLoading(false);
-        }
-    };
-    loadEvents();
+    if (localStorage.getItem('google_calendar_connected') === 'true') {
+        setCalendarEvents(getMockCalendarEvents());
+    }
   }, []);
-
-  const handleConnectCalendar = async () => {
-      try {
-          await triggerGoogleLogin(); 
-          localStorage.setItem('google_calendar_connected', 'true');
-          setIsCalendarLoading(true);
-          const events = await getCalendarEvents();
-          setCalendarEvents(events);
-          setIsCalendarLoading(false);
-      } catch (e) {
-          console.error("Calendar connection failed", e);
-      }
-  };
-
-  // --- CALENDAR GRID LOGIC ---
-  const getDaysInMonth = (date: Date) => {
-      const year = date.getFullYear();
-      const month = date.getMonth();
-      const days = new Date(year, month + 1, 0).getDate();
-      const firstDay = new Date(year, month, 1).getDay();
-      return { days, firstDay };
-  };
-
-  const changeMonth = (offset: number) => {
-      setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + offset, 1));
-  };
-
-  const getEventsForDate = (date: number) => {
-      const checkDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), date);
-      return calendarEvents.filter(e => {
-          return e.startTime.getDate() === checkDate.getDate() &&
-                 e.startTime.getMonth() === checkDate.getMonth() &&
-                 e.startTime.getFullYear() === checkDate.getFullYear();
-      });
-  };
 
   // Filter logic
   let displayTranscripts = activeTab === 'channel' && channelId
@@ -107,13 +59,13 @@ const Dashboard: React.FC<DashboardProps> = ({ transcripts, onSelectTranscript, 
   const currentChannel = getChannels().find(c => c.id === channelId);
 
   return (
-    // Removed bg-color to allow App.tsx background to show through
-    <div className="flex-1 h-full overflow-y-auto no-scrollbar relative">
+    <div className="flex-1 h-full bg-[#000000] overflow-y-auto no-scrollbar relative">
       {/* Header */}
-      <header className="sticky top-0 z-30 px-4 py-3 bg-black/80 backdrop-blur-xl border-b border-white/10 pt-safe">
+      <header className="sticky top-0 z-30 px-4 py-3 bg-[#000000]/95 backdrop-blur-md border-b border-white/10 pt-safe">
         <div className="flex items-center justify-between h-10">
           {/* LEFT: Menu & Logo */}
           <div className="flex items-center gap-3">
+              {/* Hamburger Menu - Top Left, High Visibility */}
               <button 
                 onClick={onToggleSidebar}
                 className="md:hidden p-2 -ml-2 text-gray-300 hover:text-white hover:bg-white/10 rounded-full transition-colors focus:ring-2 focus:ring-otter-500"
@@ -166,7 +118,7 @@ const Dashboard: React.FC<DashboardProps> = ({ transcripts, onSelectTranscript, 
                     {showAddMenu && (
                         <>
                             <div className="fixed inset-0 z-10 cursor-default" onClick={() => setShowAddMenu(false)}></div>
-                            <div className="absolute right-0 top-12 w-64 bg-[#1C1C1E] border border-white/10 rounded-xl shadow-2xl z-50 py-2 animate-in zoom-in-95 origin-top-right overflow-hidden">
+                            <div className="absolute right-0 top-12 w-64 bg-[#1C1C1E] border border-white/10 rounded-xl shadow-2xl z-20 py-2 animate-in zoom-in-95 origin-top-right overflow-hidden">
                                 <div className="px-3 py-1.5 text-xs font-bold text-gray-500 uppercase tracking-wide">Capture</div>
                                 <button onClick={() => { onRecord && onRecord(); setShowAddMenu(false); }} className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-white/5 text-white text-sm font-medium">
                                     <Mic size={18} className="text-otter-500" /> Record Meeting
@@ -226,7 +178,7 @@ const Dashboard: React.FC<DashboardProps> = ({ transcripts, onSelectTranscript, 
                                 <div 
                                     key={t.id} 
                                     onClick={() => onSelectTranscript(t.id)} 
-                                    className="bg-[#121212]/80 backdrop-blur-md rounded-2xl p-4 border border-white/5 hover:border-white/20 cursor-pointer active:scale-[0.98] transition-all"
+                                    className="bg-[#121212] rounded-2xl p-4 border border-white/5 hover:border-white/20 cursor-pointer active:scale-[0.98] transition-all"
                                 >
                                     <div className="flex justify-between items-start mb-2">
                                         <h3 className="font-bold text-white text-base line-clamp-1 pr-4">{t.title}</h3>
@@ -259,127 +211,25 @@ const Dashboard: React.FC<DashboardProps> = ({ transcripts, onSelectTranscript, 
         ) : (
             /* CALENDAR VIEW */
             <div className="py-4 space-y-4">
-                {/* Calendar View Toggle */}
-                <div className="flex justify-end mb-4">
-                    <div className="bg-[#1C1C1E] rounded-lg p-1 flex border border-white/10">
-                        <button 
-                            onClick={() => setCalendarViewMode('grid')}
-                            className={`p-1.5 rounded-md transition-colors ${calendarViewMode === 'grid' ? 'bg-otter-500 text-white' : 'text-gray-400 hover:text-white'}`}
-                        >
-                            <Grid size={16} />
-                        </button>
-                        <button 
-                            onClick={() => setCalendarViewMode('list')}
-                            className={`p-1.5 rounded-md transition-colors ${calendarViewMode === 'list' ? 'bg-otter-500 text-white' : 'text-gray-400 hover:text-white'}`}
-                        >
-                            <List size={16} />
-                        </button>
+                {calendarEvents.length > 0 ? calendarEvents.map(evt => (
+                    <div key={evt.id} className="flex gap-4 p-4 bg-[#121212] rounded-xl border border-white/10 items-center">
+                        <div className="flex flex-col items-center min-w-[50px]">
+                            <span className="text-sm font-bold text-white">{evt.startTime.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
+                            <div className="h-8 w-0.5 bg-white/10 my-1 rounded-full"></div>
+                        </div>
+                        <div className="flex-1">
+                            <h3 className="font-bold text-white mb-1">{evt.title}</h3>
+                            <div className="flex items-center gap-2 text-xs text-gray-500 mb-3">
+                                {evt.location && <span>{evt.location}</span>}
+                            </div>
+                            <button className="w-full py-2 bg-otter-600 hover:bg-otter-500 text-white rounded-lg text-sm font-bold transition-colors">Join & Record</button>
+                        </div>
                     </div>
-                </div>
-
-                {isCalendarLoading && <div className="text-center text-gray-500 py-10">Syncing with Google Calendar...</div>}
-                
-                {!isCalendarLoading && calendarEvents.length > 0 ? (
-                    calendarViewMode === 'grid' ? (
-                        /* GRID VIEW */
-                        <div className="bg-[#121212]/90 rounded-2xl p-4 border border-white/10 animate-in fade-in">
-                            <div className="flex items-center justify-between mb-4">
-                                <h2 className="text-lg font-bold text-white">
-                                    {currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' })}
-                                </h2>
-                                <div className="flex gap-2">
-                                    <button onClick={() => changeMonth(-1)} className="p-1 text-gray-400 hover:text-white"><ChevronLeft size={20}/></button>
-                                    <button onClick={() => changeMonth(1)} className="p-1 text-gray-400 hover:text-white"><ChevronRight size={20}/></button>
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-7 mb-2 text-center">
-                                {['S','M','T','W','T','F','S'].map(d => <span key={d} className="text-xs text-gray-500 font-bold">{d}</span>)}
-                            </div>
-
-                            <div className="grid grid-cols-7 gap-1">
-                                {Array.from({ length: getDaysInMonth(currentMonth).firstDay }).map((_, i) => <div key={`empty-${i}`} />)}
-                                {Array.from({ length: getDaysInMonth(currentMonth).days }).map((_, i) => {
-                                    const day = i + 1;
-                                    const events = getEventsForDate(day);
-                                    const isSelected = selectedDate?.getDate() === day && selectedDate.getMonth() === currentMonth.getMonth();
-                                    const isToday = new Date().getDate() === day && new Date().getMonth() === currentMonth.getMonth();
-
-                                    return (
-                                        <div 
-                                            key={day} 
-                                            onClick={() => setSelectedDate(new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day))}
-                                            className={`h-10 rounded-lg flex flex-col items-center justify-center cursor-pointer transition-colors relative
-                                                ${isSelected ? 'bg-otter-600 text-white' : 'hover:bg-white/10 text-gray-300'}
-                                                ${isToday && !isSelected ? 'border border-otter-500' : ''}
-                                            `}
-                                        >
-                                            <span className="text-sm font-medium">{day}</span>
-                                            {events.length > 0 && (
-                                                <div className="flex gap-0.5 mt-0.5">
-                                                    {events.slice(0,3).map(e => <div key={e.id} className={`w-1 h-1 rounded-full ${isSelected ? 'bg-white' : 'bg-otter-400'}`} />)}
-                                                </div>
-                                            )}
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        </div>
-                    ) : (
-                        /* LIST VIEW */
-                        <div className="space-y-4 animate-in fade-in">
-                            {calendarEvents.map(evt => (
-                                <div key={evt.id} className="flex gap-4 p-4 bg-[#121212]/80 rounded-xl border border-white/10 items-center">
-                                    <div className="flex flex-col items-center min-w-[50px]">
-                                        <span className="text-sm font-bold text-white">{evt.startTime.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
-                                        <div className="h-8 w-0.5 bg-white/10 my-1 rounded-full"></div>
-                                    </div>
-                                    <div className="flex-1">
-                                        <h3 className="font-bold text-white mb-1">{evt.title}</h3>
-                                        <div className="flex items-center gap-2 text-xs text-gray-500 mb-3">
-                                            {evt.location && <span>{evt.location}</span>}
-                                        </div>
-                                        <button className="w-full py-2 bg-otter-600 hover:bg-otter-500 text-white rounded-lg text-sm font-bold transition-colors">Join & Record</button>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    )
-                ) : !isCalendarLoading && (
+                )) : (
                     <div className="text-center py-20">
                         <CalendarIcon size={48} className="mx-auto text-gray-700 mb-4 opacity-50" />
-                        <h2 className="text-white font-bold text-lg mb-2">No events found</h2>
-                        <p className="text-gray-500 mb-4 text-sm">Connect Google Calendar to see your schedule.</p>
-                        <button onClick={handleConnectCalendar} className="text-otter-500 font-bold text-sm hover:underline border border-otter-500 px-4 py-2 rounded-full">Connect Now</button>
-                    </div>
-                )}
-
-                {/* Selected Day Agenda (Grid Mode Only) */}
-                {calendarViewMode === 'grid' && selectedDate && calendarEvents.length > 0 && (
-                    <div className="animate-in slide-in-from-bottom-2">
-                        <h3 className="text-sm font-bold text-gray-500 uppercase mb-3">
-                            {selectedDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
-                        </h3>
-                        <div className="space-y-3">
-                            {getEventsForDate(selectedDate.getDate()).map(evt => (
-                                <div key={evt.id} className="flex gap-4 p-4 bg-[#121212]/80 rounded-xl border border-white/10 items-center">
-                                    <div className="flex flex-col items-center min-w-[50px]">
-                                        <span className="text-sm font-bold text-white">{evt.startTime.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
-                                        <div className="h-full w-0.5 bg-white/10 my-1 rounded-full min-h-[20px]"></div>
-                                    </div>
-                                    <div className="flex-1">
-                                        <h3 className="font-bold text-white mb-1">{evt.title}</h3>
-                                        <div className="flex items-center gap-2 text-xs text-gray-500 mb-3">
-                                            {evt.location && <span>{evt.location}</span>}
-                                        </div>
-                                        <button className="w-full py-2 bg-otter-600 hover:bg-otter-500 text-white rounded-lg text-sm font-bold transition-colors">Join & Record</button>
-                                    </div>
-                                </div>
-                            ))}
-                            {getEventsForDate(selectedDate.getDate()).length === 0 && (
-                                <p className="text-gray-500 text-sm text-center py-4">No events for this day.</p>
-                            )}
-                        </div>
+                        <h2 className="text-white font-bold text-lg mb-2">No events today</h2>
+                        <button onClick={async () => { await simulateGoogleLogin(); localStorage.setItem('google_calendar_connected', 'true'); setCalendarEvents(getMockCalendarEvents()); }} className="text-otter-500 font-bold text-sm hover:underline">Connect Calendar</button>
                     </div>
                 )}
             </div>

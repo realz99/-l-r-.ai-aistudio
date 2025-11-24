@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Bell, Check, X, Calendar, Sparkles } from 'lucide-react';
 

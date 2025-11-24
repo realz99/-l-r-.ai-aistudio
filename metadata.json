@@ -1,5 +1,5 @@
 {
-  "name": "ọlọ́rọ̀.ai",
+  "name": "oloro.ai",
   "description": "A personal AI meeting assistant featuring real-time transcript synchronization, speaker identification, and Gemini-powered summaries.",
   "requestFramePermissions": [
     "microphone"

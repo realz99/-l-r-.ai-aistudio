@@ -4,7 +4,13 @@ import { SettingsStore } from "./settingsStore";
 
 // 🔴 CRITICAL: YOU MUST PASTE YOUR REAL GOOGLE CLIENT ID HERE
 // Go to console.cloud.google.com -> Credentials -> OAuth 2.0 Client IDs
-const GOOGLE_CLIENT_ID = "PLACEHOLDER"; 
+let googleClientId = "PLACEHOLDER"; 
+
+export const setGoogleClientId = (id: string) => {
+    googleClientId = id;
+    // Re-initialize with new ID
+    initGoogleAuth();
+};
 
 export interface GoogleProfile {
   email: string;
@@ -18,14 +24,14 @@ let tokenClient: any;
 /**
  * Initializes the Google Identity Services Token Client.
  */
-export const initGoogleAuth = (callback: (token: string) => void) => {
+export const initGoogleAuth = (callback?: (token: string) => void) => {
     if (typeof window !== 'undefined' && (window as any).google) {
         try {
             tokenClient = (window as any).google.accounts.oauth2.initTokenClient({
-                client_id: GOOGLE_CLIENT_ID,
+                client_id: googleClientId,
                 scope: 'https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/calendar.events',
                 callback: async (tokenResponse: any) => {
-                    if (tokenResponse.access_token) {
+                    if (tokenResponse.access_token && callback) {
                         callback(tokenResponse.access_token);
                     }
                 },
@@ -42,11 +48,20 @@ export const initGoogleAuth = (callback: (token: string) => void) => {
  */
 export const triggerGoogleLogin = (): Promise<GoogleProfile> => {
     return new Promise((resolve, reject) => {
+        if (googleClientId === "PLACEHOLDER") {
+             reject(new Error("MISSING_CLIENT_ID"));
+             return;
+        }
+
         if (!tokenClient) {
-            const msg = "Google Auth not initialized. Check internet connection and GOOGLE_CLIENT_ID.";
-            alert(msg);
-            reject(new Error(msg));
-            return;
+            // Attempt late initialization
+            initGoogleAuth();
+            if (!tokenClient) {
+                const msg = "Google Auth not initialized. Check internet connection and GOOGLE_CLIENT_ID.";
+                alert(msg);
+                reject(new Error(msg));
+                return;
+            }
         }
 
         // We override the callback for this specific login request

@@ -10,10 +10,13 @@ const GeometricBackground: React.FC = () => {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    let width = canvas.width = canvas.offsetWidth;
-    let height = canvas.height = canvas.offsetHeight;
+    // Use visual viewport for mobile correctness
+    const updateSize = () => {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    };
+    updateSize();
 
-    // Get dynamic primary color from CSS variable
     const getPrimaryColor = () => {
         const style = getComputedStyle(document.documentElement);
         const color = style.getPropertyValue('--primary-500').trim();
@@ -21,7 +24,7 @@ const GeometricBackground: React.FC = () => {
     };
 
     const particles: Particle[] = [];
-    const numParticles = 40; // Adjust density
+    const numParticles = 50; 
 
     class Particle {
       x: number;
@@ -31,20 +34,19 @@ const GeometricBackground: React.FC = () => {
       size: number;
 
       constructor() {
-        this.x = Math.random() * width;
-        this.y = Math.random() * height;
-        this.vx = (Math.random() - 0.5) * 0.5; // Slow movement
-        this.vy = (Math.random() - 0.5) * 0.5;
-        this.size = Math.random() * 2 + 1;
+        this.x = Math.random() * canvas!.width;
+        this.y = Math.random() * canvas!.height;
+        this.vx = (Math.random() - 0.5) * 0.8;
+        this.vy = (Math.random() - 0.5) * 0.8;
+        this.size = Math.random() * 2 + 1.5;
       }
 
       update() {
         this.x += this.vx;
         this.y += this.vy;
 
-        // Bounce off edges
-        if (this.x < 0 || this.x > width) this.vx *= -1;
-        if (this.y < 0 || this.y > height) this.vy *= -1;
+        if (this.x < 0 || this.x > canvas!.width) this.vx *= -1;
+        if (this.y < 0 || this.y > canvas!.height) this.vy *= -1;
       }
 
       draw() {
@@ -52,7 +54,7 @@ const GeometricBackground: React.FC = () => {
         ctx.beginPath();
         ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
         ctx.fillStyle = getPrimaryColor();
-        ctx.globalAlpha = 0.3;
+        ctx.globalAlpha = 0.5;
         ctx.fill();
       }
     }
@@ -65,25 +67,24 @@ const GeometricBackground: React.FC = () => {
 
     const animate = () => {
       if (!ctx) return;
-      ctx.clearRect(0, 0, width, height);
+      ctx.clearRect(0, 0, canvas!.width, canvas!.height);
       const color = getPrimaryColor();
 
       particles.forEach((p, index) => {
         p.update();
         p.draw();
 
-        // Connect particles
         for (let j = index + 1; j < particles.length; j++) {
           const p2 = particles[j];
           const dx = p.x - p2.x;
           const dy = p.y - p2.y;
           const distance = Math.sqrt(dx * dx + dy * dy);
 
-          if (distance < 100) {
+          if (distance < 120) {
             ctx.beginPath();
             ctx.strokeStyle = color;
-            ctx.globalAlpha = 0.1 * (1 - distance / 100);
-            ctx.lineWidth = 1;
+            ctx.globalAlpha = 0.2 * (1 - distance / 120);
+            ctx.lineWidth = 1.5;
             ctx.moveTo(p.x, p.y);
             ctx.lineTo(p2.x, p2.y);
             ctx.stroke();
@@ -96,24 +97,19 @@ const GeometricBackground: React.FC = () => {
 
     animate();
 
-    const handleResize = () => {
-      if (!canvas) return;
-      width = canvas.width = canvas.offsetWidth;
-      height = canvas.height = canvas.offsetHeight;
-    };
-
-    window.addEventListener('resize', handleResize);
+    window.addEventListener('resize', updateSize);
 
     return () => {
       cancelAnimationFrame(animationFrameId);
-      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('resize', updateSize);
     };
   }, []);
 
   return (
     <canvas 
       ref={canvasRef} 
-      className="absolute inset-0 w-full h-full pointer-events-none opacity-40"
+      className="absolute inset-0 w-full h-full pointer-events-none"
+      style={{ opacity: 0.6 }}
     />
   );
 };

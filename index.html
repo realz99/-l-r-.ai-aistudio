@@ -1,24 +1,25 @@
-
 <!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-    <meta name="theme-color" content="#2D72D2" />
+    <meta name="theme-color" content="#000000" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="ọlọ́rọ̀.ai" />
-    <link rel="manifest" href="data:application/manifest+json;base64,eyJuYW1lIjoiy41s4buNcsOwuC5haSIsImNob3J0X25hbWUiOiLhu41s4buNc3wiLCJzdGFydF91cmwiOiIvIiwiZGlzcGxheSI6InN0YW5kYWxvbmUiLCJiYWNrZ3JvdW5kX2NvbG9yIjoiIzJDNzJEMiIsInRoZW1lX2NvbG9yIjoiIzJDNzJEMiIsImljb25zIjpbeyJzcmMiOiJodHRwczovL2FwaS5kaWNlYmVhci5jb20vNy54L2lkZW50aWNvbi9zdmc/c2VlZD1vbG9ybyIsInR5cGVzIjoiaW1hZ2Uvc3ZnK3htbCIsInNpemVzIjoiNTEyeDUxMiJ9XX0=" />
+    <meta name="description" content="Production-grade AI meeting assistant with offline transcription.">
+    <link rel="manifest" href="/manifest.json" />
     <title>ọlọ́rọ̀.ai</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script>
       tailwind.config = {
         darkMode: 'class',
         theme: {
           extend: {
             fontFamily: {
-              sans: ['-apple-system', 'BlinkMacSystemFont', 'Inter', 'SF Pro Text', 'Segoe UI', 'Roboto', 'sans-serif'],
+              sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
             },
             colors: {
               otter: {
@@ -30,11 +31,11 @@
               },
               ios: {
                 bg: '#F2F2F7',
-                'bg-dark': '#121212',
+                'bg-dark': '#000000', // AMOLED Black
                 surface: '#FFFFFF',
-                'surface-dark': '#1C1C1E',
+                'surface-dark': '#121212', // Slightly lighter for cards to distinguish from bg
                 separator: '#C6C6C8',
-                'separator-dark': '#38383A',
+                'separator-dark': '#2C2C2E',
                 blue: '#007AFF',
               },
               neuro: {
@@ -50,9 +51,11 @@
               'ios': '0 0.5px 2px rgba(0, 0, 0, 0.1)',
               'ios-card': '0 2px 8px rgba(0, 0, 0, 0.04)',
               'fab': '0 4px 12px rgba(0, 0, 0, 0.2)',
+              'neon': '0 0 15px rgba(var(--primary-500), 0.4)',
             },
             padding: {
               'safe-bottom': 'env(safe-area-inset-bottom)',
+              'safe-top': 'env(safe-area-inset-top)',
             }
           }
         }
@@ -68,9 +71,10 @@
       }
 
       body {
-        font-family: '-apple-system', 'BlinkMacSystemFont', sans-serif;
+        font-family: 'Inter', sans-serif;
         -webkit-font-smoothing: antialiased;
         background-color: #F2F2F7;
+        overscroll-behavior-y: none; /* Prevent pull-to-refresh */
       }
       .dark body {
         background-color: #000000;
@@ -86,6 +90,12 @@
       
       .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
       .pt-safe { padding-top: env(safe-area-inset-top); }
+      
+      /* High Contrast Focus for Accessibility */
+      *:focus-visible {
+        outline: 2px solid var(--primary-500);
+        outline-offset: 2px;
+      }
     </style>
   <script type="importmap">
 {
@@ -102,5 +112,18 @@
 </head>
   <body>
     <div id="root"></div>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js')
+            .then(registration => {
+              console.log('SW registered');
+            })
+            .catch(registrationError => {
+              console.log('SW registration failed: ', registrationError);
+            });
+        });
+      }
+    </script>
   </body>
 </html>

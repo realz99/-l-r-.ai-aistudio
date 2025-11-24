@@ -1,12 +1,21 @@
 
 import React from 'react';
 
+export interface Account {
+  id: string;
+  name: string;
+  email: string;
+  avatar: string;
+  token?: string;
+}
+
 export interface User {
   id: string;
   name: string;
   email: string;
   avatarUrl: string;
   isAuthenticated: boolean;
+  googleToken?: string; // For real API calls
 }
 
 export interface Speaker {
@@ -23,7 +32,8 @@ export interface Segment {
   text: string;
   confidence?: number; // 0.0 to 1.0
   isHighlighted?: boolean;
-  comment?: string;
+  isBookmarked?: boolean; // User bookmarked this segment
+  note?: string; // User attached note
   reminder?: {
     date: string; // ISO string
     title: string;
@@ -175,6 +185,7 @@ export interface AppSettings {
   themeColor: 'blue' | 'teal' | 'purple' | 'orange' | 'pink';
   vocabulary: string[];
   userContext: string; // For "Context" page
+  geminiModel: string;
   notifications: NotificationSettings;
   meeting: MeetingSettings;
   advanced: AdvancedSettings;

@@ -7,6 +7,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   themeColor: 'blue',
   vocabulary: [],
   userContext: '',
+  geminiModel: 'gemini-2.5-flash',
   notifications: {
     myConversations: true,
     sharedWithMe: true,
@@ -62,6 +63,10 @@ export class SettingsStore {
     const updated = { ...current, ...partial };
     localStorage.setItem(this.STORAGE_KEY, JSON.stringify(updated));
     return updated;
+  }
+
+  static replaceSettings(newSettings: AppSettings) {
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(newSettings));
   }
 
   static getVocabulary(): string[] {

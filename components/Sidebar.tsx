@@ -1,8 +1,9 @@
 
 import React, { useState, useEffect } from 'react';
-import { LayoutDashboard, Settings, Mic, Sparkles, Home, Hash, ChevronDown, Plus, Folder, ChevronRight, CalendarCheck, X } from 'lucide-react';
-import { getChannels, getFolders, addChannel, addFolder } from '../services/mockData';
-import { Channel, Folder as FolderType } from '../types';
+import { LayoutDashboard, Settings, Mic, Sparkles, Home, Hash, ChevronDown, Plus, Folder, ChevronRight, CalendarCheck, X, Menu, LogOut, UserPlus, Check } from 'lucide-react';
+import { getChannels, getFolders } from '../services/mockData';
+import { Channel, Folder as FolderType, Account } from '../types';
+import GeometricBackground from './GeometricBackground';
 
 interface NavigationProps {
   currentPage: string;
@@ -10,9 +11,22 @@ interface NavigationProps {
   darkMode: boolean;
   toggleDarkMode: () => void;
   onRecord: () => void;
+  isOpen?: boolean;
+  onClose?: () => void;
+  onOpenModal: (type: 'channel' | 'folder' | 'dm') => void;
+  
+  // Account Props
+  accounts: Account[];
+  currentAccount: Account;
+  onSwitchAccount: (accountId: string) => void;
+  onAddAccount: () => void;
 }
 
-const Navigation: React.FC<NavigationProps> = ({ currentPage, onNavigate, darkMode, toggleDarkMode, onRecord }) => {
+const Navigation: React.FC<NavigationProps> = ({ 
+    currentPage, onNavigate, darkMode, toggleDarkMode, onRecord, 
+    isOpen, onClose, onOpenModal,
+    accounts, currentAccount, onSwitchAccount, onAddAccount
+}) => {
   const [sectionsOpen, setSectionsOpen] = useState({
       channels: true,
       dms: true,
@@ -21,10 +35,7 @@ const Navigation: React.FC<NavigationProps> = ({ currentPage, onNavigate, darkMo
 
   const [channels, setChannels] = useState<Channel[]>([]);
   const [folders, setFolders] = useState<FolderType[]>([]);
-  
-  // Modal States
-  const [activeModal, setActiveModal] = useState<'channel' | 'folder' | 'dm' | null>(null);
-  const [newItemName, setNewItemName] = useState('');
+  const [showAccountMenu, setShowAccountMenu] = useState(false);
 
   useEffect(() => {
       setChannels(getChannels());
@@ -35,296 +46,175 @@ const Navigation: React.FC<NavigationProps> = ({ currentPage, onNavigate, darkMo
       setSectionsOpen(prev => ({...prev, [section]: !prev[section]}));
   };
 
-  const handleCreate = () => {
-      if (!newItemName.trim()) return;
-      
-      if (activeModal === 'channel') {
-          const newChannel = addChannel(newItemName, 'public');
-          setChannels(getChannels()); // Refresh list
-          onNavigate('channel', { channelId: newChannel.id });
-      } else if (activeModal === 'folder') {
-          const newFolder = addFolder(newItemName);
-          setFolders(getFolders()); // Refresh list
-      } else if (activeModal === 'dm') {
-          // Mock DM creation logic
-          alert(`DM created with ${newItemName}`);
-      }
-      
-      setActiveModal(null);
-      setNewItemName('');
-  };
+  const SidebarContent = () => (
+      <div className="flex flex-col h-full text-white relative overflow-hidden">
+        {/* Geometric Background Layer */}
+        <GeometricBackground />
 
-  // Mobile Bottom Nav Items
-  const bottomNavItems = [
-    { id: 'dashboard', icon: Home, label: 'Home' },
-    { id: 'planner', icon: CalendarCheck, label: 'Planner' },
-    { id: 'record', icon: Mic, label: '', isFab: true },
-    { id: 'ai-chat', icon: Sparkles, label: 'AI Chat' },
-    { id: 'settings', icon: Settings, label: 'Account' },
-  ];
+        {/* Content Layer */}
+        <div className="relative z-10 flex flex-col h-full">
+            {/* Header & Account Switcher */}
+            <div className="px-4 pt-6 pb-4 flex flex-col gap-4 flex-shrink-0 bg-[#000000]/50 backdrop-blur-sm">
+                <div className="flex items-center justify-between">
+                    <button className="flex items-center gap-2 text-xl font-black tracking-tight focus:outline-none" aria-label="Go to Home">
+                        ọlọ́rọ̀.ai
+                    </button>
+                    <div className="flex items-center gap-2">
+                        <div className="relative">
+                            <button 
+                                onClick={() => setShowAccountMenu(!showAccountMenu)}
+                                className="w-8 h-8 rounded-full overflow-hidden ring-2 ring-white/20 hover:ring-white/50 transition-all"
+                            >
+                                <img src={currentAccount.avatar} alt="Profile" className="w-full h-full object-cover" />
+                            </button>
+                            
+                            {/* Account Dropdown */}
+                            {showAccountMenu && (
+                                <>
+                                    <div className="fixed inset-0 z-40 cursor-default" onClick={() => setShowAccountMenu(false)}></div>
+                                    <div className="absolute right-0 top-10 w-64 bg-[#1C1C1E] border border-white/10 rounded-xl shadow-2xl z-50 p-2 animate-in fade-in zoom-in-95 origin-top-right">
+                                        <div className="px-3 py-2 border-b border-white/10 mb-1">
+                                            <p className="text-sm font-bold text-white">{currentAccount.name}</p>
+                                            <p className="text-xs text-gray-400 truncate">{currentAccount.email}</p>
+                                        </div>
+                                        
+                                        <div className="space-y-1 py-1">
+                                            {accounts.map(acc => (
+                                                <button 
+                                                    key={acc.id}
+                                                    onClick={() => { onSwitchAccount(acc.id); setShowAccountMenu(false); }}
+                                                    className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm ${currentAccount.id === acc.id ? 'bg-otter-500/20 text-otter-400' : 'text-gray-300 hover:bg-white/5'}`}
+                                                >
+                                                    <div className="flex items-center gap-2">
+                                                        <img src={acc.avatar} className="w-6 h-6 rounded-full" />
+                                                        <span>{acc.name}</span>
+                                                    </div>
+                                                    {currentAccount.id === acc.id && <Check size={14} />}
+                                                </button>
+                                            ))}
+                                        </div>
+
+                                        <div className="border-t border-white/10 mt-1 pt-1">
+                                            <button 
+                                                onClick={() => { onAddAccount(); setShowAccountMenu(false); }}
+                                                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-400 hover:text-white hover:bg-white/5 rounded-lg"
+                                            >
+                                                <UserPlus size={16} /> Add another account
+                                            </button>
+                                            <button className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-400 hover:bg-red-500/10 rounded-lg mt-1">
+                                                <LogOut size={16} /> Sign out
+                                            </button>
+                                        </div>
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                        
+                        {onClose && (
+                            <button onClick={onClose} className="md:hidden p-2 text-gray-400 hover:text-white" aria-label="Close Menu">
+                                <X size={24} />
+                            </button>
+                        )}
+                    </div>
+                </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto px-2 space-y-1 no-scrollbar">
+                <button onClick={() => onNavigate('dashboard')} className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${currentPage === 'dashboard' ? 'bg-otter-900/50 text-blue-400' : 'text-gray-400 hover:bg-white/10 hover:text-white'}`}>
+                    <Home size={18} /><span>Home</span>
+                </button>
+                <button onClick={() => onNavigate('planner')} className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${currentPage === 'planner' ? 'bg-teal-900/30 text-teal-400' : 'text-gray-400 hover:bg-white/10 hover:text-white'}`}>
+                    <CalendarCheck size={18} /><span>AI Planner</span>
+                </button>
+                <button onClick={() => onNavigate('my-agenda')} className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${currentPage === 'my-agenda' ? 'bg-otter-900/50 text-blue-400' : 'text-gray-400 hover:bg-white/10 hover:text-white'}`}>
+                    <LayoutDashboard size={18} /><span>My Agenda</span>
+                </button>
+
+                {/* Channels */}
+                <div className="pt-6">
+                    <div className="flex items-center justify-between px-3 mb-2 cursor-pointer group" onClick={() => toggleSection('channels')}>
+                        <div className="flex items-center gap-1 text-gray-500 group-hover:text-gray-300">
+                            {sectionsOpen.channels ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+                            <span className="text-xs font-bold uppercase tracking-wider">Channels</span>
+                        </div>
+                        <button onClick={(e) => { e.stopPropagation(); onOpenModal('channel'); }} className="text-gray-500 hover:text-white p-1"><Plus size={14} /></button>
+                    </div>
+                    {sectionsOpen.channels && (
+                        <div className="space-y-0.5">
+                            {channels.map(c => (
+                                <button key={c.id} onClick={() => onNavigate('channel', { channelId: c.id })} className="w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-sm text-gray-400 hover:bg-white/10 hover:text-white">
+                                    <Hash size={16} className="opacity-50" /><span>{c.name}</span>
+                                </button>
+                            ))}
+                        </div>
+                    )}
+                </div>
+
+                {/* DMs */}
+                <div className="pt-4">
+                    <div className="flex items-center justify-between px-3 mb-2 cursor-pointer group" onClick={() => toggleSection('dms')}>
+                        <div className="flex items-center gap-1 text-gray-500 group-hover:text-gray-300">
+                            {sectionsOpen.dms ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+                            <span className="text-xs font-bold uppercase tracking-wider">DMs</span>
+                        </div>
+                        <button onClick={(e) => { e.stopPropagation(); onOpenModal('dm'); }} className="text-gray-500 hover:text-white p-1"><Plus size={14} /></button>
+                    </div>
+                    {sectionsOpen.dms && (
+                        <div className="space-y-0.5">
+                            <button className="w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-sm text-gray-400 hover:bg-white/10 hover:text-white">
+                                <div className="w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center"><Sparkles size={8} className="text-white" /></div>
+                                <span>Otter</span>
+                            </button>
+                        </div>
+                    )}
+                </div>
+
+                {/* Folders */}
+                <div className="pt-4">
+                    <div className="flex items-center justify-between px-3 mb-2 cursor-pointer group" onClick={() => toggleSection('folders')}>
+                        <div className="flex items-center gap-1 text-gray-500 group-hover:text-gray-300">
+                            {sectionsOpen.folders ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+                            <span className="text-xs font-bold uppercase tracking-wider">Folders</span>
+                        </div>
+                        <button onClick={(e) => { e.stopPropagation(); onOpenModal('folder'); }} className="text-gray-500 hover:text-white p-1"><Plus size={14} /></button>
+                    </div>
+                    {sectionsOpen.folders && (
+                        <div className="space-y-0.5">
+                            {folders.map(f => (
+                                <button key={f.id} className="w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-sm text-gray-400 hover:bg-white/10 hover:text-white">
+                                    <Folder size={16} className="opacity-50" /><span>{f.name}</span>
+                                </button>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            <div className="p-4 border-t border-white/10 space-y-1 flex-shrink-0 bg-black/80 backdrop-blur-sm">
+                 <button onClick={() => onNavigate('settings')} className="w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-400 hover:bg-white/10 hover:text-white">
+                    <Settings size={18} /><span>Settings</span>
+                 </button>
+            </div>
+        </div>
+      </div>
+  );
 
   return (
     <>
-      {/* --- DESKTOP SIDEBAR (Hidden on mobile) --- */}
-      <div className="hidden md:flex w-[260px] h-screen flex-col flex-shrink-0 bg-ios-surface dark:bg-ios-surface-dark border-r border-gray-200 dark:border-ios-separator-dark z-50">
-        
-        {/* Header: User Profile Dropdown */}
-        <div className="px-4 pt-5 pb-4 flex items-center justify-between">
-            <button className="flex items-center gap-2 text-2xl font-black text-otter-500 tracking-tight">
-                ọlọ́rọ̀.ai
-            </button>
-            <div className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
-                S
-            </div>
-        </div>
-
-        <div className="flex-1 overflow-y-auto px-2 space-y-1">
-            
-            {/* Top Level */}
-            <button
-                onClick={() => onNavigate('dashboard')}
-                className={`w-full flex items-center space-x-3 px-3 py-2 rounded-md text-[14px] font-medium transition-colors ${
-                currentPage === 'dashboard' 
-                    ? 'bg-blue-50 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400' 
-                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5'
-                }`}
-            >
-                <Home size={18} />
-                <span>Home</span>
-            </button>
-            <button
-                onClick={() => onNavigate('planner')}
-                className={`w-full flex items-center space-x-3 px-3 py-2 rounded-md text-[14px] font-medium transition-colors ${
-                currentPage === 'planner' 
-                    ? 'bg-teal-50 dark:bg-teal-500/20 text-teal-600 dark:text-teal-400' 
-                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5'
-                }`}
-            >
-                <CalendarCheck size={18} />
-                <span>AI Planner</span>
-            </button>
-            <button
-                onClick={() => onNavigate('my-agenda')}
-                className={`w-full flex items-center space-x-3 px-3 py-2 rounded-md text-[14px] font-medium transition-colors ${
-                currentPage === 'my-agenda' 
-                    ? 'bg-blue-50 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400' 
-                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5'
-                }`}
-            >
-                <LayoutDashboard size={18} />
-                <span>My Agenda</span>
-            </button>
-
-            {/* Channels Section */}
-            <div className="pt-4">
-                <div 
-                    className="flex items-center justify-between px-3 mb-1 cursor-pointer group"
-                    onClick={() => toggleSection('channels')}
-                >
-                    <div className="flex items-center gap-1">
-                        {sectionsOpen.channels ? <ChevronDown size={14} className="text-gray-400" /> : <ChevronRight size={14} className="text-gray-400" />}
-                        <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Channels</span>
-                    </div>
-                    <button 
-                        onClick={(e) => { e.stopPropagation(); setActiveModal('channel'); }}
-                        className="text-gray-400 hover:text-white"
-                    >
-                        <Plus size={14} />
-                    </button>
-                </div>
-                
-                {sectionsOpen.channels && (
-                    <div className="space-y-0.5 ml-2 border-l border-gray-200 dark:border-white/10 pl-2">
-                        <button 
-                            onClick={() => setActiveModal('channel')}
-                            className="w-full flex items-center space-x-3 px-3 py-2 rounded-md text-[14px] font-medium text-gray-400 hover:text-white hover:bg-white/5"
-                        >
-                            <Plus size={16} />
-                            <span>Create New Channel</span>
-                        </button>
-                        {channels.map(channel => (
-                            <button 
-                                key={channel.id}
-                                onClick={() => onNavigate('channel', { channelId: channel.id })}
-                                className="w-full flex items-center space-x-3 px-3 py-2 rounded-md text-[14px] font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5"
-                            >
-                                <Hash size={16} className="text-gray-400" />
-                                <span>{channel.name}</span>
-                            </button>
-                        ))}
-                    </div>
-                )}
-            </div>
-
-            {/* DMs Section */}
-            <div className="pt-4">
-                <div 
-                    className="flex items-center justify-between px-3 mb-1 cursor-pointer group"
-                    onClick={() => toggleSection('dms')}
-                >
-                     <div className="flex items-center gap-1">
-                        {sectionsOpen.dms ? <ChevronDown size={14} className="text-gray-400" /> : <ChevronRight size={14} className="text-gray-400" />}
-                        <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">DMs</span>
-                    </div>
-                    <button 
-                        onClick={(e) => { e.stopPropagation(); setActiveModal('dm'); }}
-                        className="text-gray-400 hover:text-white"
-                    >
-                        <Plus size={14} />
-                    </button>
-                </div>
-                {sectionsOpen.dms && (
-                    <div className="space-y-0.5 ml-2 border-l border-gray-200 dark:border-white/10 pl-2">
-                        <button 
-                            onClick={() => setActiveModal('dm')}
-                            className="w-full flex items-center space-x-3 px-3 py-2 rounded-md text-[14px] font-medium text-gray-400 hover:text-white hover:bg-white/5"
-                        >
-                            <Plus size={16} />
-                            <span>Create New Message</span>
-                        </button>
-                        <button className="w-full flex items-center space-x-3 px-3 py-2 rounded-md text-[14px] font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5 group">
-                            <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
-                                <Sparkles size={10} className="text-white" />
-                            </div>
-                            <span>Otter</span>
-                        </button>
-                        <button className="w-full flex items-center space-x-3 px-3 py-2 rounded-md text-[14px] font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5">
-                            <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center text-[9px] text-white">
-                                SO
-                            </div>
-                            <span>Sheriff Okoye</span>
-                        </button>
-                    </div>
-                )}
-            </div>
-
-            {/* Folders Section */}
-            <div className="pt-4">
-                <div 
-                    className="flex items-center justify-between px-3 mb-1 cursor-pointer group"
-                    onClick={() => toggleSection('folders')}
-                >
-                    <div className="flex items-center gap-1">
-                        {sectionsOpen.folders ? <ChevronDown size={14} className="text-gray-400" /> : <ChevronRight size={14} className="text-gray-400" />}
-                        <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Folders</span>
-                    </div>
-                    <button 
-                        onClick={(e) => { e.stopPropagation(); setActiveModal('folder'); }}
-                        className="text-gray-400 hover:text-white"
-                    >
-                        <Plus size={14} />
-                    </button>
-                </div>
-                {sectionsOpen.folders && (
-                    <div className="space-y-0.5 ml-2 border-l border-gray-200 dark:border-white/10 pl-2">
-                        <button 
-                            onClick={() => setActiveModal('folder')}
-                            className="w-full flex items-center space-x-3 px-3 py-2 rounded-md text-[14px] font-medium text-gray-400 hover:text-white hover:bg-white/5"
-                        >
-                            <Plus size={16} />
-                            <span>Create New Folder</span>
-                        </button>
-                        {folders.map(folder => (
-                            <button 
-                                key={folder.id}
-                                className="w-full flex items-center space-x-3 px-3 py-2 rounded-md text-[14px] font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5"
-                            >
-                                <Folder size={16} className="text-gray-400" />
-                                <span>{folder.name}</span>
-                                <span className="ml-auto text-xs text-gray-500">{folder.count}</span>
-                            </button>
-                        ))}
-                    </div>
-                )}
-            </div>
-
-        </div>
-
-        {/* Desktop Footer */}
-        <div className="p-4 border-t border-gray-200 dark:border-ios-separator-dark space-y-1">
-             <button 
-                onClick={() => onNavigate('settings')}
-                className="w-full flex items-center space-x-3 px-3 py-2 rounded-md text-[14px] font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5"
-             >
-                <Settings size={18} />
-                <span>Account Settings</span>
-             </button>
-             <button 
-                onClick={toggleDarkMode}
-                className="w-full flex items-center justify-center py-2 text-xs font-medium text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 rounded"
-             >
-                {darkMode ? 'Light Mode' : 'Dark Mode'}
-             </button>
-        </div>
+      {/* Desktop Sidebar */}
+      <div className="hidden md:flex w-[260px] h-screen flex-col flex-shrink-0 bg-black border-r border-white/10 z-50">
+        <SidebarContent />
       </div>
 
-      {/* --- CREATE MODAL --- */}
-      {activeModal && (
-          <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center">
-              <div className="bg-white dark:bg-ios-surface-dark p-6 rounded-2xl w-full max-w-sm shadow-2xl border border-gray-200 dark:border-white/10 animate-in zoom-in-95 duration-200">
-                  <div className="flex justify-between items-center mb-4">
-                      <h3 className="text-lg font-bold text-gray-900 dark:text-white capitalize">
-                          Create {activeModal}
-                      </h3>
-                      <button onClick={() => { setActiveModal(null); setNewItemName(''); }} className="p-1 text-gray-400 hover:text-gray-900 dark:hover:text-white">
-                          <X size={20} />
-                      </button>
-                  </div>
-                  <input 
-                      type="text" 
-                      autoFocus
-                      placeholder={`Enter ${activeModal} name...`}
-                      className="w-full px-4 py-3 bg-gray-100 dark:bg-black rounded-xl border-none focus:ring-2 focus:ring-blue-500 dark:text-white mb-6"
-                      value={newItemName}
-                      onChange={(e) => setNewItemName(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
-                  />
-                  <button 
-                      onClick={handleCreate}
-                      disabled={!newItemName.trim()}
-                      className="w-full bg-otter-500 hover:bg-otter-600 text-white font-bold py-3 rounded-xl transition-colors disabled:opacity-50"
-                  >
-                      Create
-                  </button>
-              </div>
-          </div>
+      {/* Mobile Drawer */}
+      {isOpen && (
+        <div className="fixed inset-0 z-[100] md:hidden" role="dialog" aria-modal="true">
+            <div className="absolute inset-0 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200" onClick={onClose}></div>
+            <div className="absolute left-0 top-0 bottom-0 w-[280px] bg-[#000000] border-r border-white/10 shadow-2xl animate-in slide-in-from-left duration-300">
+                <SidebarContent />
+            </div>
+        </div>
       )}
-
-      {/* --- MOBILE BOTTOM BAR (Visible on mobile) --- */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-ios-surface/90 dark:bg-ios-surface-dark/95 backdrop-blur-xl border-t border-gray-200 dark:border-ios-separator-dark z-50 pb-safe">
-        <div className="flex justify-around items-end h-[60px] pb-2">
-            {bottomNavItems.map((item) => {
-                const Icon = item.icon;
-                const isActive = currentPage === item.id;
-                
-                if (item.isFab) {
-                    return (
-                        <div key={item.id} className="relative -top-5">
-                            <button 
-                                onClick={onRecord}
-                                className="w-14 h-14 rounded-full bg-otter-500 text-white flex items-center justify-center shadow-fab active:scale-95 transition-transform"
-                            >
-                                <Mic size={24} strokeWidth={2.5} />
-                            </button>
-                        </div>
-                    );
-                }
-
-                return (
-                    <button
-                        key={item.id}
-                        onClick={() => onNavigate(item.id)}
-                        className={`flex flex-col items-center justify-center w-16 gap-1 ${
-                            isActive ? 'text-otter-500' : 'text-gray-400 dark:text-gray-500'
-                        }`}
-                    >
-                        <Icon size={24} strokeWidth={isActive ? 2.5 : 2} />
-                        <span className="text-[10px] font-medium">{item.label}</span>
-                    </button>
-                );
-            })}
-        </div>
-      </div>
     </>
   );
 };

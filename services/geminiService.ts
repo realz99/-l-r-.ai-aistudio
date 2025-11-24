@@ -25,6 +25,63 @@ export interface TranscriptionSegment {
 }
 
 /**
+ * Refines raw transcription text (from Web Speech API) using Gemini.
+ * Fixes grammar, punctuation, and formats it into segments.
+ */
+export const cleanupTranscript = async (rawText: string): Promise<TranscriptionSegment[]> => {
+    const { client, keyId } = getClient();
+    const vocab = SettingsStore.getVocabulary();
+    
+    try {
+        const prompt = `
+            You are an expert transcription editor.
+            Refine the following raw transcript text (which may have errors from speech-to-text).
+            
+            Tasks:
+            1. Fix punctuation, capitalization, and grammar.
+            2. Infer speaker changes if obvious from context (label as Speaker 1, Speaker 2), otherwise use "Speaker 1".
+            3. Apply context from this vocabulary list: ${vocab.join(', ')}.
+            
+            Raw Text:
+            "${rawText}"
+            
+            Return a JSON array of objects with 'speaker' and 'text'.
+        `;
+
+        const response = await client.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: prompt,
+            config: {
+                responseMimeType: "application/json",
+                responseSchema: {
+                    type: Type.ARRAY,
+                    items: {
+                        type: Type.OBJECT,
+                        properties: {
+                            speaker: { type: Type.STRING },
+                            text: { type: Type.STRING }
+                        },
+                        required: ['speaker', 'text']
+                    }
+                }
+            }
+        });
+
+        if (keyId && response.usageMetadata) {
+            const totalTokens = (response.usageMetadata.promptTokenCount || 0) + (response.usageMetadata.candidatesTokenCount || 0);
+            KeyManager.logUsage(keyId, totalTokens);
+        }
+
+        const jsonStr = response.text || "[]";
+        return JSON.parse(jsonStr);
+    } catch (error: any) {
+        console.error("Cleanup Error:", error);
+        // Fallback: return raw text as single segment
+        return [{ speaker: "Speaker 1", text: rawText }];
+    }
+};
+
+/**
  * Transcribes audio data using Gemini 2.5 Flash.
  */
 export const transcribeAudio = async (base64Audio: string, mimeType: string): Promise<TranscriptionSegment[]> => {

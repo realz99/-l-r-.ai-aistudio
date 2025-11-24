@@ -1,0 +1,114 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="theme-color" content="#2D72D2" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="ọlọ́rọ̀.ai" />
+    <link rel="manifest" href="data:application/manifest+json;base64,eyJuYW1lIjoiy41s4buNcsOwuC5haSIsImNob3J0X25hbWUiOiLhu41s4buNc3wiLCJzdGFydF91cmwiOiIvIiwiZGlzcGxheSI6InN0YW5kYWxvbmUiLCJiYWNrZ3JvdW5kX2NvbG9yIjoiIzJDNzJEMiIsInRoZW1lX2NvbG9yIjoiIzJDNzJEMiIsImljb25zIjpbeyJzcmMiOiJodHRwczovL2FwaS5kaWNlYmVhci5jb20vNy54L2lkZW50aWNvbi9zdmc/c2VlZD1vbG9ybyIsInR5cGVzIjoiaW1hZ2Uvc3ZnK3htbCIsInNpemVzIjoiNTEyeDUxMiJ9XX0=" />
+    <title>ọlọ́rọ̀.ai</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['-apple-system', 'BlinkMacSystemFont', 'Inter', 'SF Pro Text', 'Segoe UI', 'Roboto', 'sans-serif'],
+            },
+            colors: {
+              otter: {
+                50: '#f0f7ff',
+                100: '#e0effe',
+                500: '#2D72D2', // Primary Blue
+                600: '#1c5bba',
+                900: '#0f2963',
+              },
+              ios: {
+                bg: '#F2F2F7',
+                'bg-dark': '#121212', // Darker background for OLED
+                surface: '#FFFFFF',
+                'surface-dark': '#1C1C1E',
+                separator: '#C6C6C8',
+                'separator-dark': '#38383A',
+                blue: '#007AFF',
+              },
+              neuro: {
+                bg: '#F0F9F8', // Minty background
+                surface: '#FFFFFF',
+                primary: '#009688', // Teal
+                dark: '#004D40', // Dark Teal
+                accent: '#80CBC4', // Light Teal
+                text: '#004D40'
+              }
+            },
+            boxShadow: {
+              'ios': '0 0.5px 2px rgba(0, 0, 0, 0.1)',
+              'ios-card': '0 2px 8px rgba(0, 0, 0, 0.04)',
+              'fab': '0 4px 12px rgba(45, 114, 210, 0.3)',
+            },
+            borderRadius: {
+              'ios': '10px',
+              'ios-lg': '14px',
+              'ios-xl': '20px',
+            },
+            padding: {
+              'safe-bottom': 'env(safe-area-inset-bottom)',
+            }
+          }
+        }
+      }
+    </script>
+    <style>
+      body {
+        font-family: '-apple-system', 'BlinkMacSystemFont', sans-serif;
+        -webkit-font-smoothing: antialiased;
+        background-color: #F2F2F7;
+      }
+      .dark body {
+        background-color: #000000;
+      }
+      
+      /* Hide scrollbar */
+      .no-scrollbar::-webkit-scrollbar {
+        display: none;
+      }
+      .no-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+      
+      .backdrop-blur-xl {
+        -webkit-backdrop-filter: blur(20px);
+        backdrop-filter: blur(20px);
+      }
+
+      /* iOS Safe Area Utilities */
+      .pb-safe {
+        padding-bottom: env(safe-area-inset-bottom);
+      }
+      .pt-safe {
+        padding-top: env(safe-area-inset-top);
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.554.0",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.30.0",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "recharts": "https://aistudiocdn.com/recharts@^3.5.0"
+  }
+}
+</script>
+</head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>
